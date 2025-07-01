@@ -1,96 +1,49 @@
 #version 150
-/* holographic shader
- * mode 0 = MIRROR (opaque glassy)
- * mode 1 = BUBBLE (transparent, refracts background)
- */
+uniform float thinFilmBase, roughness, alpha, lensDepth, farPlane, warpScale, noiseAmp, time;
+uniform sampler2D bgTex;
+uniform vec2 resolution;
 
-uniform float thinFilmBase;
-uniform float roughness;
-uniform int   mode;        /* 0 / 1 */
-uniform float alpha;       /* final alpha (1.0 or 0.35) */
-
-uniform sampler2D bgTex;   /* background texture */
-uniform vec2  resolution;  /* viewport size */
-
-in  vec3 vN;
-in  vec3 vV;
+in  vec3 vN, vV, vPosV;
 out vec4 fragColor;
 
-/* util */
-float sat(float x){ return clamp(x,0.0,1.0); }
-vec3  sat(vec3 v){ return clamp(v,0.0,1.0); }
-
-/* Fresnel */
-vec3 F_Schlick(float cosT, vec3 F0){
-  return F0 + (1.0 - F0) * pow(1.0 - cosT, 5.0);
+/* helpers */
+float sat(float x){return clamp(x,0.0,1.0);} vec3 sat(vec3 v){return clamp(v,0.0,1.0);}
+vec3  F(float c,vec3 f0){return f0+(1.0-f0)*pow(1.0-c,5.0);}
+vec3  irid(float n,float d,float c){
+  const vec3 L=vec3(0.681,0.532,0.450);
+  return 0.5+0.5*cos(4.0*3.141592*n*d*c/L);
 }
-
-/* GGX */
-float D_GGX(float c, float a){
-  float a2 = a*a;
-  float d  = c*c*(a2-1.0)+1.0;
-  return a2 / (3.14159 * d * d + 1e-4);
-}
-float G_Smith(float cv, float cl, float a){
-  float k=(a+1.0); k=k*k/8.0;
-  return cv/(cv*(1.0-k)+k) * cl/(cl*(1.0-k)+k);
-}
-
-/* thin-film interference */
-vec3 irid(float nFilm, float d, float cosT){
-  const vec3 lam = vec3(0.681, 0.532, 0.450); /* µm */
-  vec3 phi = 4.0 * 3.141592 * nFilm * d * cosT / lam;
-  return 0.5 + 0.5 * cos(phi);
-}
-
-/* simple gradient env */
-vec3 env(vec3 d){
-  float t = sat(d.y*0.5 + 0.5);
-  vec3 sky = mix(vec3(0.80,0.88,1.0), vec3(0.42,0.65,1.0), pow(t,1.6));
-  return mix(vec3(0.18,0.18,0.20), sky, t);
-}
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+vec2 curl(vec2 p){float e=.001;
+  return vec2(h(p+vec2(0,e))-h(p-vec2(0,e)),
+              h(p+vec2(e,0))-h(p-vec2(e,0)));}
 
 void main(){
-  vec3 N = normalize(vN);
-  vec3 V = normalize(vV);
-  vec3 I = -V;
-  float cv = sat(dot(N,V));
+  vec3 N = normalize(vN + vec3(curl(gl_FragCoord.xy*0.006+time*0.3)*noiseAmp,0));
+  vec3 V = normalize(vV); vec3 I=-V; float cv=sat(dot(N,V));
 
-  if(mode == 0){ /* MIRROR ------------------------------------------------ */
-    vec3 eta = vec3(1.03,1.035,1.04);
-    vec3 Rr = refract(I,N,1.0/eta.r);
-    vec3 Rg = refract(I,N,1.0/eta.g);
-    vec3 Rb = refract(I,N,1.0/eta.b);
-    vec3 refr = vec3(env(Rr).r, env(Rg).g, env(Rb).b);
+  /* dispersion directions */
+  vec3 eta=vec3(1.333,1.340,1.348);
+  vec3 Rr=refract(I,N,1.0/eta.r);
+  vec3 Rg=refract(I,N,1.0/eta.g);
+  vec3 Rb=refract(I,N,1.0/eta.b);
 
-    float a = max(0.003, roughness*roughness);
-    vec3  R = reflect(I,N);
-    vec3  H = normalize(V+R);
-    float cl = sat(dot(N,R));
-    float ch = sat(dot(N,H));
-    vec3  F = F_Schlick(sat(dot(H,V)), vec3(0.04));
-    vec3  spec = env(R) * (D_GGX(ch,a) * G_Smith(cv,cl,a))
-                 / max(4.0*cv*cl,1e-4) * F;
+  vec3 P=vPosV; float r=lensDepth;
+  float tr=-dot(P,Rr)+sqrt(max(dot(P,Rr)*dot(P,Rr)-(dot(P,P)-r*r),0));
+  float tg=-dot(P,Rg)+sqrt(max(dot(P,Rg)*dot(P,Rg)-(dot(P,P)-r*r),0));
+  float tb=-dot(P,Rb)+sqrt(max(dot(P,Rb)*dot(P,Rb)-(dot(P,P)-r*r),0));
+  vec3 Qr=P+Rr*tr, Qg=P+Rg*tg, Qb=P+Rb*tb;
 
-    vec3 col = refr + irid(1.4, thinFilmBase, cv) + spec;
-    col = col / (col + 1.0);
-    col = pow(col, vec3(1.0/2.2));
-    fragColor = vec4(sat(col), 1.0);
-    return;
-  }
+  /* screen projection */
+  vec2 base=(I.xy/I.z)*(-farPlane); base=base*0.5/resolution.y+0.5;
+  vec2 uvR=clamp(base + (Qr.xy/Qr.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
+  vec2 uvG=clamp(base + (Qg.xy/Qg.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
+  vec2 uvB=clamp(base + (Qb.xy/Qb.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
 
-  /* BUBBLE -------------------------------------------------------------- */
-  vec2 uv0 = gl_FragCoord.xy / resolution;
-  vec2 ofs = N.xy * 0.03;               /* simple spherical lens */
-  vec3 refrCol = vec3(texture(bgTex, uv0 + ofs*0.95).r,
-                      texture(bgTex, uv0 + ofs*1.00).g,
-                      texture(bgTex, uv0 + ofs*1.05).b);
+  vec3 refr=vec3(texture(bgTex,uvR).r, texture(bgTex,uvG).g, texture(bgTex,uvB).b);
+  vec3 film=irid(1.33,thinFilmBase,cv)*0.85;
+  vec3 spec=F(cv,vec3(0.04))*0.15;
 
-  vec3 col = refrCol +
-             irid(1.4, thinFilmBase, cv) * 0.8 +
-             F_Schlick(cv, vec3(0.04))   * 0.2;
-
-  col = col / (col + 1.0);
-  col = pow(col, vec3(1.0/2.2));
-  fragColor = vec4(sat(col), alpha);
+  vec3 col=pow((refr+film+spec)/(refr+film+spec+1.0), vec3(1.0/2.2));
+  fragColor=vec4(sat(col), alpha);
 }

@@ -1,143 +1,107 @@
-/* ============================================================
- *  HoloIridescenceDemo.pde
- *  ------------------------------------------------------------
- *  DEMO:
- *    • <space>  : BOX ↔ SPHERE
- *    • <I>      : ICO on/off
- *    • <B>      : MIRROR ↔ BUBBLE (透明屈折モード)
- *  ========================================================= */
 import processing.opengl.*;
 
-PShape geom;            // current geometry
-PShader holo;           // GLSL shader
-PImage  bgImg;          // background image
+PShape geom;
+PShader holo;
+PImage  bg;
 
-/* material parameters */
-float thin  = 1.0f;     // thin-film (µm)
-float rough = 0.15f;    // 0–1
+/* parameters */
+float thin = 1.0f, rough = 0.12f, alpha = 0.35f;
+float depth = 2.0f, farP = 20.0f, warpScale = 1.5f, noiseAmp = 0.10f;
+boolean useBox = true, useIco = false;
 
-/* mode switching */
-int  renderMode = 0;    // 0 = MIRROR, 1 = BUBBLE
-boolean useBox = true;
-boolean useIco = false;
-
-/* ----------------------------------------------------------- */
-void settings(){ size(900, 650, P3D); }
+void settings(){ size(900,650,P3D); }
 
 void setup(){
-  surface.setTitle("Holographic Iridescence  |  <space>/<I>/<B>");
-  noStroke();
-  updateGeometry();
+  surface.setTitle("Warp Bubble  –  SPACE I  A/Z T/G D/F W/S Y/H U/J R/E");
+  noStroke(); updateGeom();
+  bg = loadImage("windows.jpg"); bg.resize(width,height);
 
-  /* load shader */
-  holo = loadShader("holo.frag", "holo.vert");
-  holo.set("thinFilmBase", thin);
-  holo.set("roughness",   rough);
-  holo.set("resolution",  (float)width, (float)height);
-
-  /* background image */
-  bgImg = loadImage("windows.jpg");
-  bgImg.resize(width, height);
-  holo.set("bgTex", bgImg);          // send once (static)
+  holo = loadShader("holo.frag","holo.vert");
+  holo.set("bgTex",bg); holo.set("resolution",(float)width,(float)height);
 }
 
 void draw(){
-  /* 0) clear screen & depth, draw background without depth write */
-  background(0);
-  hint(DISABLE_DEPTH_TEST);
-  image(bgImg, 0, 0, width, height);
-  hint(ENABLE_DEPTH_TEST);
+  background(0); hint(DISABLE_DEPTH_TEST); image(bg,0,0); hint(ENABLE_DEPTH_TEST);
 
-  /* 1) set mode & alpha uniforms */
-  holo.set("mode", renderMode);
-  holo.set("alpha", renderMode==0 ? 1.0f : 0.35f);
+  holo.set("thinFilmBase",thin);
+  holo.set("roughness",rough);
+  holo.set("alpha",alpha);
+  holo.set("lensDepth",depth);
+  holo.set("farPlane",farP);
+  holo.set("warpScale",warpScale);
+  holo.set("noiseAmp",noiseAmp);
+  holo.set("time",millis()*0.001f);
 
-  /* 2) enable blending only for transparent bubble mode */
-  if(renderMode==1){
-    PGL pgl = beginPGL();
-    pgl.enable(PGL.BLEND);
-    pgl.blendFunc(PGL.SRC_ALPHA, PGL.ONE_MINUS_SRC_ALPHA);
-    endPGL();
-  }
-
-  /* 3) draw geometry */
-  shader(holo);
+  beginBlend(); shader(holo);
   pushMatrix();
     translate(width*0.5f, height*0.55f);
-    rotateY(frameCount*0.006f);
-    rotateX(frameCount*0.004f);
+    rotateY(frameCount*0.006f); rotateX(frameCount*0.004f);
     shape(geom);
-  popMatrix();
-  resetShader();
+  popMatrix(); resetShader(); endBlend();
 
-  if(renderMode==1){
-    PGL pgl = beginPGL();
-    pgl.disable(PGL.BLEND);
-    endPGL();
-  }
+  hud();
+}
 
-  /* 4) UI text (always on top) */
+void beginBlend(){ PGL g=beginPGL(); g.enable(PGL.BLEND);
+  g.blendFunc(PGL.SRC_ALPHA,PGL.ONE_MINUS_SRC_ALPHA); endPGL(); }
+void endBlend(){ PGL g=beginPGL(); g.disable(PGL.BLEND); endPGL(); }
+
+void hud(){
   hint(DISABLE_DEPTH_TEST);
   fill(255); textSize(12);
-  String shapeName = useBox ? "BOX" : useIco ? "ICOSAHEDRON" : "SPHERE";
-  String modeName  = renderMode==0 ? "MIRROR" : "BUBBLE";
-  text(shapeName+"  |  mode: "+modeName+"   (space / I / B)", 10, height-10);
+  String sh=useBox?"BOX":useIco?"ICO":"SPHERE";
+  text(String.format(
+    "%s  α=%.2f thin=%.2fµm depth=%.2f far=%.0f scale=%.1f noise=%.2f rough=%.2f",
+    sh,alpha,thin,depth,farP,warpScale,noiseAmp,rough),10,height-10);
   hint(ENABLE_DEPTH_TEST);
 }
 
-/* ---------------- keyboard ---------------- */
 void keyPressed(){
-  if(key==' '){
-    useBox = !useBox;
-    useIco = false;
-    updateGeometry();
-  } else if(key=='i' || key=='I'){
-    useIco = !useIco;
-    useBox = false;
-    updateGeometry();
-  } else if(key=='b' || key=='B'){
-    renderMode = 1 - renderMode;     // toggle
+  switch(key){
+    case ' ': useBox=!useBox; useIco=false; updateGeom(); break;
+    case 'i': case 'I': useIco=!useIco; useBox=false; updateGeom(); break;
+    case 'a': case 'A': alpha = constrain(alpha+0.05,0,1); break;
+    case 'z': case 'Z': alpha = constrain(alpha-0.05,0,1); break;
+    case 't': case 'T': thin  = constrain(thin +0.05,0.3,1.5); break;
+    case 'g': case 'G': thin  = constrain(thin -0.05,0.3,1.5); break;
+    case 'd': case 'D': depth = constrain(depth+0.15,1,4); break;
+    case 'f': case 'F': depth = constrain(depth-0.15,1,4); break;
+    case 'w': case 'W': farP  = constrain(farP +2,8,40); break;
+    case 's': case 'S': farP  = constrain(farP -2,8,40); break;
+    case 'y': case 'Y': warpScale=constrain(warpScale+0.2,0.5,4); break;
+    case 'h': case 'H': warpScale=constrain(warpScale-0.2,0.5,4); break;
+    case 'u': case 'U': noiseAmp = constrain(noiseAmp+0.02,0,0.3); break;
+    case 'j': case 'J': noiseAmp = constrain(noiseAmp-0.02,0,0.3); break;
+    case 'r':           rough = constrain(rough+0.02,0,0.4); break;
+    case 'e':           rough = constrain(rough-0.02,0,0.4); break;
   }
 }
 
-/* ---------------- helpers ---------------- */
-void updateGeometry(){
-  if(useBox)      geom = createShape(BOX, 250);
-  else if(useIco) geom = createIcosahedron(220);
-  else            geom = createShape(SPHERE, 220);
+void updateGeom(){
+  if(useBox)      geom=createShape(BOX,250);
+  else if(useIco) geom=createIcosahedron(220);
+  else            geom=createShape(SPHERE,250);
 }
 
-/* faceted icosahedron generator */
 PShape createIcosahedron(float r){
-  float t = (1 + sqrt(5)) / 2.0f;
-  float s = r / sqrt(1 + t*t);
-
-  /* vertices */
-  float[][] v = {
-    {-s,  t*s,  0}, { s,  t*s,  0}, {-s, -t*s,  0}, { s, -t*s, 0},
-    { 0, -s,  t*s}, { 0,  s,  t*s}, { 0, -s, -t*s}, { 0,  s, -t*s},
-    { t*s, 0, -s}, { t*s, 0,  s}, {-t*s, 0, -s}, {-t*s, 0,  s}
-  };
-  /* face indices */
-  int[][] idx = {
-    {0,11,5},{0,5,1},{0,1,7},{0,7,10},{0,10,11},
-    {1,5,9},{5,11,4},{11,10,2},{10,7,6},{7,1,8},
-    {3,9,4},{3,4,2},{3,2,6},{3,6,8},{3,8,9},
-    {4,9,5},{2,4,11},{6,2,10},{8,6,7},{9,8,1}
-  };
-
-  PShape ico = createShape();
-  ico.beginShape(TRIANGLES);
+  float t=(1+sqrt(5))/2, s=r/sqrt(1+t*t);
+  float[][] v={{-s,t*s,0},{s,t*s,0},{-s,-t*s,0},{s,-t*s,0},
+               {0,-s,t*s},{0,s,t*s},{0,-s,-t*s},{0,s,-t*s},
+               {t*s,0,-s},{t*s,0,s},{-t*s,0,-s},{-t*s,0,s}};
+  int[][] f={{0,11,5},{0,5,1},{0,1,7},{0,7,10},{0,10,11},
+             {1,5,9},{5,11,4},{11,10,2},{10,7,6},{7,1,8},
+             {3,9,4},{3,4,2},{3,2,6},{3,6,8},{3,8,9},
+             {4,9,5},{2,4,11},{6,2,10},{8,6,7},{9,8,1}};
+  PShape ico=createShape(); ico.beginShape(TRIANGLES);
   ico.noStroke();
-  for(int[] f : idx){
-    PVector a = new PVector(v[f[0]][0], v[f[0]][1], v[f[0]][2]);
-    PVector b = new PVector(v[f[1]][0], v[f[1]][1], v[f[1]][2]);
-    PVector c = new PVector(v[f[2]][0], v[f[2]][1], v[f[2]][2]);
-    PVector n = PVector.cross(PVector.sub(b,a), PVector.sub(c,a), null).normalize();
-    ico.normal(n.x, n.y, n.z); ico.vertex(a.x, a.y, a.z);
-    ico.normal(n.x, n.y, n.z); ico.vertex(b.x, b.y, b.z);
-    ico.normal(n.x, n.y, n.z); ico.vertex(c.x, c.y, c.z);
+  for(int[] T:f){
+    PVector a=new PVector(v[T[0]][0],v[T[0]][1],v[T[0]][2]);
+    PVector b=new PVector(v[T[1]][0],v[T[1]][1],v[T[1]][2]);
+    PVector c=new PVector(v[T[2]][0],v[T[2]][1],v[T[2]][2]);
+    PVector n=PVector.cross(PVector.sub(b,a),PVector.sub(c,a),null).normalize();
+    ico.normal(n.x,n.y,n.z); ico.vertex(a.x,a.y,a.z);
+    ico.normal(n.x,n.y,n.z); ico.vertex(b.x,b.y,b.z);
+    ico.normal(n.x,n.y,n.z); ico.vertex(c.x,c.y,c.z);
   }
-  ico.endShape();
-  return ico;
+  ico.endShape(); return ico;
 }
