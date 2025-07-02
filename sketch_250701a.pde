@@ -7,6 +7,7 @@ PImage  bg;
 /* parameters */
 float thin = 1.0f, rough = 0.12f, alpha = 0.35f;
 float depth = 2.0f, farP = 20.0f, warpScale = 1.5f, noiseAmp = 0.10f;
+float dispersion = 1.0f;
 boolean useBox = true, useIco = false;
 
 void settings(){ size(900,650,P3D); }
@@ -30,6 +31,7 @@ void draw(){
   holo.set("farPlane",farP);
   holo.set("warpScale",warpScale);
   holo.set("noiseAmp",noiseAmp);
+  holo.set("dispersion",dispersion);
   holo.set("time",millis()*0.001f);
 
   beginBlend(); shader(holo);
@@ -51,8 +53,8 @@ void hud(){
   fill(255); textSize(12);
   String sh=useBox?"BOX":useIco?"ICO":"SPHERE";
   text(String.format(
-    "%s  α=%.2f thin=%.2fµm depth=%.2f far=%.0f scale=%.1f noise=%.2f rough=%.2f",
-    sh,alpha,thin,depth,farP,warpScale,noiseAmp,rough),10,height-10);
+    "%s  α=%.2f thin=%.2fµm depth=%.2f far=%.0f scale=%.1f noise=%.2f rough=%.2f disp=%.1f",
+    sh,alpha,thin,depth,farP,warpScale,noiseAmp,rough,dispersion),10,height-10);
   hint(ENABLE_DEPTH_TEST);
 }
 
@@ -60,20 +62,23 @@ void keyPressed(){
   switch(key){
     case ' ': useBox=!useBox; useIco=false; updateGeom(); break;
     case 'i': case 'I': useIco=!useIco; useBox=false; updateGeom(); break;
-    case 'a': case 'A': alpha = constrain(alpha+0.05,0,1); break;
-    case 'z': case 'Z': alpha = constrain(alpha-0.05,0,1); break;
-    case 't': case 'T': thin  = constrain(thin +0.05,0.3,1.5); break;
-    case 'g': case 'G': thin  = constrain(thin -0.05,0.3,1.5); break;
-    case 'd': case 'D': depth = constrain(depth+0.15,1,4); break;
-    case 'f': case 'F': depth = constrain(depth-0.15,1,4); break;
-    case 'w': case 'W': farP  = constrain(farP +2,8,40); break;
-    case 's': case 'S': farP  = constrain(farP -2,8,40); break;
-    case 'y': case 'Y': warpScale=constrain(warpScale+0.2,0.5,4); break;
-    case 'h': case 'H': warpScale=constrain(warpScale-0.2,0.5,4); break;
-    case 'u': case 'U': noiseAmp = constrain(noiseAmp+0.02,0,0.3); break;
-    case 'j': case 'J': noiseAmp = constrain(noiseAmp-0.02,0,0.3); break;
-    case 'r':           rough = constrain(rough+0.02,0,0.4); break;
-    case 'e':           rough = constrain(rough-0.02,0,0.4); break;
+    case 'a': case 'A': alpha = constrain(alpha+0.05f,0f,1f); break;
+    case 'z': case 'Z': alpha = constrain(alpha-0.05f,0f,1f); break;
+    case 't': case 'T': thin  = constrain(thin +0.05f,0.3f,1.5f); break;
+    case 'g': case 'G': thin  = constrain(thin -0.05f,0.3f,1.5f); break;
+    case 'd': case 'D': depth = constrain(depth+0.15f,1f,4f); break;
+    case 'f': case 'F': depth = constrain(depth-0.15f,1f,4f); break;
+    case 'w': case 'W': farP  = constrain(farP +2f,8f,40f); break;
+    case 's': case 'S': farP  = constrain(farP -2f,8f,40f); break;
+    case 'y': case 'Y': warpScale=constrain(warpScale+0.2f,0.5f,4f); break;
+    case 'h': case 'H': warpScale=constrain(warpScale-0.2f,0.5f,4f); break;
+    case 'u': case 'U': noiseAmp = constrain(noiseAmp+0.02f,0f,0.3f); break;
+    case 'j': case 'J': noiseAmp = constrain(noiseAmp-0.02f,0f,0.3f); break;
+    case 'k': case 'K': dispersion = constrain(dispersion+0.1f,0f,2f); break;
+    case 'l': case 'L': dispersion = constrain(dispersion-0.1f,0f,2f); break;
+    case 'r':           rough = constrain(rough+0.02f,0f,0.4f); break;
+    case 'e':           rough = constrain(rough-0.02f,0f,0.4f); break;
+    case 'p': case 'P': saveFrame("frame-####.png"); break;
   }
 }
 

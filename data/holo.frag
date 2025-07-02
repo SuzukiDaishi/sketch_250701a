@@ -1,5 +1,5 @@
 #version 150
-uniform float thinFilmBase, roughness, alpha, lensDepth, farPlane, warpScale, noiseAmp, time;
+uniform float thinFilmBase, roughness, alpha, lensDepth, farPlane, warpScale, noiseAmp, dispersion, time;
 uniform sampler2D bgTex;
 uniform vec2 resolution;
 
@@ -23,7 +23,9 @@ void main(){
   vec3 V = normalize(vV); vec3 I=-V; float cv=sat(dot(N,V));
 
   /* dispersion directions */
-  vec3 eta=vec3(1.333,1.340,1.348);
+  vec3 eta=vec3(1.333,
+                 1.333 + 0.007*dispersion,
+                 1.333 + 0.015*dispersion);
   vec3 Rr=refract(I,N,1.0/eta.r);
   vec3 Rg=refract(I,N,1.0/eta.g);
   vec3 Rb=refract(I,N,1.0/eta.b);

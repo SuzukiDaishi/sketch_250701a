@@ -43,7 +43,9 @@ HoloBubbleWarp/
 | **W / S** | Projection distance (*farPlane*) ±2 | 8 – 40       | **20**      |
 | **Y / H** | Warp scale multiplier ±0.2          | 0.5 – 4      | **1.5**     |
 | **U / J** | Noise amplitude ±0.02               | 0 – 0.3      | **0.10**    |
+| **K / L** | Dispersion strength ±0.1            | 0 – 2        | **1.0**     |
 | **R / E** | Roughness ±0.02                     | 0 – 0.4      | **0.12**    |
+| **P**     | Save screenshot                     | –            | –           |
 
 A live HUD at the bottom‑left shows current values.
 
@@ -57,6 +59,21 @@ A live HUD at the bottom‑left shows current values.
 4. Open `HoloBubbleWarp.pde` in Processing and press **Run**.
 
 No additional libraries are required; the sketch relies only on standard P3D and GLSL 1.50.
+
+### Command‑line usage
+
+1. In the Processing IDE choose **Tools → Install "processing‑java"** to install the CLI helper.
+2. Run the sketch from a terminal:
+
+   ```bash
+   processing-java --sketch=/path/to/sketch_250701a --run
+   ```
+
+   When running headless (e.g. on a server) you may need a virtual display such as **Xvfb**.
+
+### Capturing frames
+
+Within the sketch you can call `saveFrame("frame-####.png");` to write screenshots. Pressing **Ctrl+S** (or `Cmd+S` on macOS) while the sketch window is focused also saves an image to the sketch folder.
 
 ---
 
