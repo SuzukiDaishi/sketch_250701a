@@ -1,5 +1,6 @@
 #version 150
-uniform float thinFilmBase, roughness, alpha, lensDepth, farPlane, warpScale, noiseAmp, time;
+uniform float thinFilmBase, roughness, alpha, lensDepth, farPlane,
+             warpScale, warpPow, noiseAmp, time;
 uniform sampler2D bgTex;
 uniform vec2 resolution;
 
@@ -36,9 +37,15 @@ void main(){
 
   /* screen projection */
   vec2 base=(I.xy/I.z)*(-farPlane); base=base*0.5/resolution.y+0.5;
-  vec2 uvR=clamp(base + (Qr.xy/Qr.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
-  vec2 uvG=clamp(base + (Qg.xy/Qg.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
-  vec2 uvB=clamp(base + (Qb.xy/Qb.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
+  vec2 diffR=(Qr.xy/Qr.z - I.xy/I.z)*warpScale*0.5;
+  vec2 diffG=(Qg.xy/Qg.z - I.xy/I.z)*warpScale*0.5;
+  vec2 diffB=(Qb.xy/Qb.z - I.xy/I.z)*warpScale*0.5;
+  diffR=sign(diffR)*pow(abs(diffR),warpPow);
+  diffG=sign(diffG)*pow(abs(diffG),warpPow);
+  diffB=sign(diffB)*pow(abs(diffB),warpPow);
+  vec2 uvR=clamp(base + diffR,0.002,0.998);
+  vec2 uvG=clamp(base + diffG,0.002,0.998);
+  vec2 uvB=clamp(base + diffB,0.002,0.998);
 
   vec3 refr=vec3(texture(bgTex,uvR).r, texture(bgTex,uvG).g, texture(bgTex,uvB).b);
   vec3 film=irid(1.33,thinFilmBase,cv)*0.85;

@@ -6,13 +6,14 @@ PImage  bg;
 
 /* parameters */
 float thin = 1.0f, rough = 0.12f, alpha = 0.35f;
-float depth = 2.0f, farP = 20.0f, warpScale = 1.5f, noiseAmp = 0.10f;
+float depth = 2.0f, farP = 20.0f, warpScale = 1.5f, warpPow = 1.0f,
+      noiseAmp = 0.10f;
 boolean useBox = true, useIco = false;
 
 void settings(){ size(900,650,P3D); }
 
 void setup(){
-  surface.setTitle("Warp Bubble  –  SPACE I  A/Z T/G D/F W/S Y/H U/J R/E");
+  surface.setTitle("Warp Bubble  –  SPACE I  A/Z T/G D/F W/S Y/H K/L U/J R/E P");
   noStroke(); updateGeom();
   bg = loadImage("windows.jpg"); bg.resize(width,height);
 
@@ -29,6 +30,7 @@ void draw(){
   holo.set("lensDepth",depth);
   holo.set("farPlane",farP);
   holo.set("warpScale",warpScale);
+  holo.set("warpPow",warpPow);
   holo.set("noiseAmp",noiseAmp);
   holo.set("time",millis()*0.001f);
 
@@ -51,8 +53,8 @@ void hud(){
   fill(255); textSize(12);
   String sh=useBox?"BOX":useIco?"ICO":"SPHERE";
   text(String.format(
-    "%s  α=%.2f thin=%.2fµm depth=%.2f far=%.0f scale=%.1f noise=%.2f rough=%.2f",
-    sh,alpha,thin,depth,farP,warpScale,noiseAmp,rough),10,height-10);
+    "%s  α=%.2f thin=%.2fµm depth=%.2f far=%.0f scale=%.1f pow=%.1f noise=%.2f rough=%.2f",
+    sh,alpha,thin,depth,farP,warpScale,warpPow,noiseAmp,rough),10,height-10);
   hint(ENABLE_DEPTH_TEST);
 }
 
@@ -70,10 +72,13 @@ void keyPressed(){
     case 's': case 'S': farP  = constrain(farP -2,8,40); break;
     case 'y': case 'Y': warpScale=constrain(warpScale+0.2,0.5,4); break;
     case 'h': case 'H': warpScale=constrain(warpScale-0.2,0.5,4); break;
+    case 'k': case 'K': warpPow = constrain(warpPow +0.1,0.5,3); break;
+    case 'l': case 'L': warpPow = constrain(warpPow -0.1,0.5,3); break;
     case 'u': case 'U': noiseAmp = constrain(noiseAmp+0.02,0,0.3); break;
     case 'j': case 'J': noiseAmp = constrain(noiseAmp-0.02,0,0.3); break;
     case 'r':           rough = constrain(rough+0.02,0,0.4); break;
     case 'e':           rough = constrain(rough-0.02,0,0.4); break;
+    case 'p': case 'P': saveFrame("snapshot-####.png"); break;
   }
 }
 

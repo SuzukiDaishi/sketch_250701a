@@ -42,8 +42,10 @@ HoloBubbleWarp/
 | **D / F** | Lens depth (radius) ±0.15           | 1.0 – 4.0    | **2.00**    |
 | **W / S** | Projection distance (*farPlane*) ±2 | 8 – 40       | **20**      |
 | **Y / H** | Warp scale multiplier ±0.2          | 0.5 – 4      | **1.5**     |
+| **K / L** | Warp power exponent ±0.1            | 0.5 – 3      | **1.0**     |
 | **U / J** | Noise amplitude ±0.02               | 0 – 0.3      | **0.10**    |
 | **R / E** | Roughness ±0.02                     | 0 – 0.4      | **0.12**    |
+| **P**     | Save PNG snapshot                   | screenshot   |             |
 
 A live HUD at the bottom‑left shows current values.
 
