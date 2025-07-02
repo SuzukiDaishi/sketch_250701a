@@ -83,8 +83,8 @@ Within the sketch you can call `saveFrame("frame-####.png");` to write screensho
 ## ⚙️ Technical notes
 
 * **Accurate refraction offset**
-  Refracted ray intersects a distant plane (background) and offsets UVs from the
-  current screen coordinate.
+  Rays refract on entry and exit of the bubble then intersect a distant plane to
+  determine the background UV shift.
 * **Dispersion** sampled at three wavelengths (R/G/B) using slightly different IOR values (1.333 / 1.340 / 1.348).
 * **Thin‑film** interference uses the glTF `KHR_materials_iridescence` 3‑wavelength cosine approximation.
 * **Warp strength** ≈ `warpScale × (farPlane − lensDepth)/farPlane` so perspective and scene depth influence distortion.

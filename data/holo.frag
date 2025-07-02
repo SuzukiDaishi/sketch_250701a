@@ -26,19 +26,34 @@ void main(){
   vec3 eta=vec3(1.333,
                  1.333 + 0.007*dispersion,
                  1.333 + 0.015*dispersion);
-  vec3 Rr=refract(I,N,1.0/eta.r);
-  vec3 Rg=refract(I,N,1.0/eta.g);
-  vec3 Rb=refract(I,N,1.0/eta.b);
-
   vec3 P=vPosV;
+  float r=lensDepth;
+
+  /* refract into the bubble */
+  vec3 I0r=refract(I,N,1.0/eta.r);
+  vec3 I0g=refract(I,N,1.0/eta.g);
+  vec3 I0b=refract(I,N,1.0/eta.b);
+
+  /* intersect inner surface and refract back to air */
+  float tr=-dot(P,I0r)+sqrt(max(dot(P,I0r)*dot(P,I0r)-(dot(P,P)-r*r),0.0));
+  float tg=-dot(P,I0g)+sqrt(max(dot(P,I0g)*dot(P,I0g)-(dot(P,P)-r*r),0.0));
+  float tb=-dot(P,I0b)+sqrt(max(dot(P,I0b)*dot(P,I0b)-(dot(P,P)-r*r),0.0));
+  vec3 Pr=P+I0r*tr, Pg=P+I0g*tg, Pb=P+I0b*tb;
+
+  vec3 Nr=normalize(Pr), Ng=normalize(Pg), Nb=normalize(Pb);
+  vec3 Rr=refract(I0r,Nr,eta.r);
+  vec3 Rg=refract(I0g,Ng,eta.g);
+  vec3 Rb=refract(I0b,Nb,eta.b);
+
+  /* projection to far plane */
   float tBase=(-farPlane - P.z)/I.z;
   vec3 basePos=P+I*tBase;
   vec2 base=gl_FragCoord.xy/resolution;
 
-  float tR=(-farPlane - P.z)/Rr.z;
-  float tG=(-farPlane - P.z)/Rg.z;
-  float tB=(-farPlane - P.z)/Rb.z;
-  vec3 Qr=P+Rr*tR, Qg=P+Rg*tG, Qb=P+Rb*tB;
+  float tR=(-farPlane - Pr.z)/Rr.z;
+  float tG=(-farPlane - Pg.z)/Rg.z;
+  float tB=(-farPlane - Pb.z)/Rb.z;
+  vec3 Qr=Pr+Rr*tR, Qg=Pg+Rg*tG, Qb=Pb+Rb*tB;
 
   vec2 diffR=(Qr.xy-basePos.xy)/(-farPlane);
   vec2 diffG=(Qg.xy-basePos.xy)/(-farPlane);
