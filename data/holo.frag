@@ -30,17 +30,23 @@ void main(){
   vec3 Rg=refract(I,N,1.0/eta.g);
   vec3 Rb=refract(I,N,1.0/eta.b);
 
-  vec3 P=vPosV; float r=lensDepth;
-  float tr=-dot(P,Rr)+sqrt(max(dot(P,Rr)*dot(P,Rr)-(dot(P,P)-r*r),0));
-  float tg=-dot(P,Rg)+sqrt(max(dot(P,Rg)*dot(P,Rg)-(dot(P,P)-r*r),0));
-  float tb=-dot(P,Rb)+sqrt(max(dot(P,Rb)*dot(P,Rb)-(dot(P,P)-r*r),0));
-  vec3 Qr=P+Rr*tr, Qg=P+Rg*tg, Qb=P+Rb*tb;
+  vec3 P=vPosV;
+  float tBase=(-farPlane - P.z)/I.z;
+  vec3 basePos=P+I*tBase;
+  vec2 base=basePos.xy/(-farPlane); base=base*0.5/resolution.y+0.5;
 
-  /* screen projection */
-  vec2 base=(I.xy/I.z)*(-farPlane); base=base*0.5/resolution.y+0.5;
-  vec2 uvR=clamp(base + (Qr.xy/Qr.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
-  vec2 uvG=clamp(base + (Qg.xy/Qg.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
-  vec2 uvB=clamp(base + (Qb.xy/Qb.z - I.xy/I.z)*warpScale*0.5,0.002,0.998);
+  float tR=(-farPlane - P.z)/Rr.z;
+  float tG=(-farPlane - P.z)/Rg.z;
+  float tB=(-farPlane - P.z)/Rb.z;
+  vec3 Qr=P+Rr*tR, Qg=P+Rg*tG, Qb=P+Rb*tB;
+
+  vec2 diffR=(Qr.xy-basePos.xy)/(-farPlane);
+  vec2 diffG=(Qg.xy-basePos.xy)/(-farPlane);
+  vec2 diffB=(Qb.xy-basePos.xy)/(-farPlane);
+  float w = warpScale*(farPlane-lensDepth);
+  vec2 uvR=clamp(base + diffR*w,0.002,0.998);
+  vec2 uvG=clamp(base + diffG*w,0.002,0.998);
+  vec2 uvB=clamp(base + diffB*w,0.002,0.998);
 
   vec3 refr=vec3(texture(bgTex,uvR).r, texture(bgTex,uvG).g, texture(bgTex,uvB).b);
   vec3 film=irid(1.33,thinFilmBase,cv)*0.85;

@@ -80,7 +80,8 @@ Within the sketch you can call `saveFrame("frame-####.png");` to write screensho
 ## ⚙️ Technical notes
 
 * **Accurate refraction offset**
-  Ray–sphere intersection in view space → project exit point to screen → clamp UV.
+  Refracted ray intersects a distant plane (background) and offsets UVs from the
+  original view ray.
 * **Dispersion** sampled at three wavelengths (R/G/B) using slightly different IOR values (1.333 / 1.340 / 1.348).
 * **Thin‑film** interference uses the glTF `KHR_materials_iridescence` 3‑wavelength cosine approximation.
 * **Warp strength** = `warpScale × (farPlane − lensDepth)` ensures larger fov/scene depths create bolder distortion.
