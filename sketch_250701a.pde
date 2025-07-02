@@ -33,6 +33,7 @@ void draw(){
   holo.set("noiseAmp",noiseAmp);
   holo.set("dispersion",dispersion);
   holo.set("time",millis()*0.001f);
+  holo.set("bgTex",bg); // ensure background texture is bound every frame
 
   beginBlend(); shader(holo);
   pushMatrix();

@@ -13,7 +13,8 @@
   * Thin‑film interference for rainbow colours
   * Subtle GGX rim highlights adjustable with `roughness`
   * Optional curl‑noise wobble for *Liquid Glass* feel (default gentle 0.10)
-* Background is a static image (`windows.jpg`) drawn each frame.
+* Background is a static image (`windows.jpg`) drawn each frame and also passed
+  to the shader as `bgTex` so refraction can warp it.
 * All material parameters are tweakable **via simple keyboard shortcuts** – no GUI library needed.
 
 ---
@@ -57,6 +58,8 @@ A live HUD at the bottom‑left shows current values.
 2. Clone / copy this folder.
 3. Place a background JPG named `windows.jpg` inside **data/** (any 16:9 image works).
 4. Open `HoloBubbleWarp.pde` in Processing and press **Run**.
+5. The sketch loads this image and binds it to the shader uniform `bgTex` so the
+   refraction logic can distort the background.
 
 No additional libraries are required; the sketch relies only on standard P3D and GLSL 1.50.
 
