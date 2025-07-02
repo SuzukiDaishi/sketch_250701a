@@ -3,6 +3,7 @@ import processing.opengl.*;
 PShape geom;
 PShader holo;
 PImage  bg;
+PGraphics warpBuf;
 
 /* parameters */
 float thin = 1.0f, rough = 0.12f, alpha = 0.35f;
@@ -16,6 +17,9 @@ void setup(){
   surface.setTitle("Warp Bubble  –  SPACE I  A/Z T/G D/F W/S Y/H U/J R/E");
   noStroke(); updateGeom();
   bg = loadImage("windows.jpg"); bg.resize(width,height);
+
+  warpBuf = createGraphics(width, height, P3D);
+  warpBuf.noStroke();
 
   holo = loadShader("holo.frag","holo.vert");
   holo.set("bgTex",bg); holo.set("resolution",(float)width,(float)height);
@@ -35,19 +39,23 @@ void draw(){
   holo.set("time",millis()*0.001f);
   holo.set("bgTex",bg); // ensure background texture is bound every frame
 
-  beginBlend(); shader(holo);
-  pushMatrix();
-    translate(width*0.5f, height*0.55f);
-    rotateY(frameCount*0.006f); rotateX(frameCount*0.004f);
-    shape(geom);
-  popMatrix(); resetShader(); endBlend();
+  warpBuf.beginDraw();
+  warpBuf.background(0,0);
+  warpBuf.shader(holo);
+  warpBuf.pushMatrix();
+    warpBuf.translate(width*0.5f, height*0.55f);
+    warpBuf.rotateY(frameCount*0.006f);
+    warpBuf.rotateX(frameCount*0.004f);
+    warpBuf.shape(geom);
+  warpBuf.popMatrix();
+  warpBuf.resetShader();
+  warpBuf.endDraw();
+
+  image(warpBuf,0,0);
 
   hud();
 }
 
-void beginBlend(){ PGL g=beginPGL(); g.enable(PGL.BLEND);
-  g.blendFunc(PGL.SRC_ALPHA,PGL.ONE_MINUS_SRC_ALPHA); endPGL(); }
-void endBlend(){ PGL g=beginPGL(); g.disable(PGL.BLEND); endPGL(); }
 
 void hud(){
   hint(DISABLE_DEPTH_TEST);

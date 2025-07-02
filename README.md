@@ -60,6 +60,8 @@ A live HUD at the bottom‑left shows current values.
 4. Open `HoloBubbleWarp.pde` in Processing and press **Run**.
 5. The sketch loads this image and binds it to the shader uniform `bgTex` so the
    refraction logic can distort the background.
+6. The bubble mesh is rendered to an off‑screen buffer (`warpBuf`) so its warped
+   pixels fully replace the image behind them.
 
 No additional libraries are required; the sketch relies only on standard P3D and GLSL 1.50.
 
@@ -85,6 +87,12 @@ Within the sketch you can call `saveFrame("frame-####.png");` to write screensho
 * **Accurate refraction offset**
   Rays refract on entry and exit of the bubble then intersect a distant plane to
   determine the background UV shift.
+  Steps performed in the fragment shader:
+  1. Build the view ray from the current fragment.
+  2. Refract that ray as it enters the bubble.
+  3. Intersect the inner surface and refract back out to air.
+  4. Project both the original and refracted rays to a far plane.
+  5. Convert their difference to a screen‑space UV offset and sample `bgTex`.
 * **Dispersion** sampled at three wavelengths (R/G/B) using slightly different IOR values (1.333 / 1.340 / 1.348).
 * **Thin‑film** interference uses the glTF `KHR_materials_iridescence` 3‑wavelength cosine approximation.
 * **Warp strength** ≈ `warpScale × (farPlane − lensDepth)/farPlane` so perspective and scene depth influence distortion.
