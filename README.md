@@ -11,7 +11,7 @@
 
   * RGB‑wise Snell refraction → large‐scale background warp
   * Thin‑film interference for rainbow colours
-  * Subtle GGX rim highlights (`roughness`)
+  * Subtle GGX rim highlights adjustable with `roughness`
   * Optional curl‑noise wobble for *Liquid Glass* feel (default gentle 0.10)
 * Background is a static image (`windows.jpg`) drawn each frame.
 * All material parameters are tweakable **via simple keyboard shortcuts** – no GUI library needed.

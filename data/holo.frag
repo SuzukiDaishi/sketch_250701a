@@ -50,7 +50,8 @@ void main(){
 
   vec3 refr=vec3(texture(bgTex,uvR).r, texture(bgTex,uvG).g, texture(bgTex,uvB).b);
   vec3 film=irid(1.33,thinFilmBase,cv)*0.85;
-  vec3 spec=F(cv,vec3(0.04))*0.15;
+  float width=mix(4.0,1.0,roughness*2.5);
+  vec3 spec=F(cv,vec3(0.04))*pow(1.0-cv,width)*0.5;
 
   vec3 col=pow((refr+film+spec)/(refr+film+spec+1.0), vec3(1.0/2.2));
   fragColor=vec4(sat(col), alpha);
