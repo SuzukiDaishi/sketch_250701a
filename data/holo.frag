@@ -33,7 +33,7 @@ void main(){
   vec3 P=vPosV;
   float tBase=(-farPlane - P.z)/I.z;
   vec3 basePos=P+I*tBase;
-  vec2 base=basePos.xy/(-farPlane); base=base*0.5/resolution.y+0.5;
+  vec2 base=gl_FragCoord.xy/resolution;
 
   float tR=(-farPlane - P.z)/Rr.z;
   float tG=(-farPlane - P.z)/Rg.z;
@@ -43,7 +43,7 @@ void main(){
   vec2 diffR=(Qr.xy-basePos.xy)/(-farPlane);
   vec2 diffG=(Qg.xy-basePos.xy)/(-farPlane);
   vec2 diffB=(Qb.xy-basePos.xy)/(-farPlane);
-  float w = warpScale*(farPlane-lensDepth);
+  float w = warpScale*(farPlane-lensDepth)/farPlane;
   vec2 uvR=clamp(base + diffR*w,0.002,0.998);
   vec2 uvG=clamp(base + diffG*w,0.002,0.998);
   vec2 uvB=clamp(base + diffB*w,0.002,0.998);

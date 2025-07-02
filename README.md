@@ -81,10 +81,10 @@ Within the sketch you can call `saveFrame("frame-####.png");` to write screensho
 
 * **Accurate refraction offset**
   Refracted ray intersects a distant plane (background) and offsets UVs from the
-  original view ray.
+  current screen coordinate.
 * **Dispersion** sampled at three wavelengths (R/G/B) using slightly different IOR values (1.333 / 1.340 / 1.348).
 * **Thin‑film** interference uses the glTF `KHR_materials_iridescence` 3‑wavelength cosine approximation.
-* **Warp strength** = `warpScale × (farPlane − lensDepth)` ensures larger fov/scene depths create bolder distortion.
+* **Warp strength** ≈ `warpScale × (farPlane − lensDepth)/farPlane` so perspective and scene depth influence distortion.
 * **Curl‑noise wobble** (P\_Malin *Liquid Glass* method) adds subtle spatial‑temporal variation; set `noiseAmp` → 0 to disable.
 
 ---
